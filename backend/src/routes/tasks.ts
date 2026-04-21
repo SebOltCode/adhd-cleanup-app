@@ -11,6 +11,9 @@ import { calculateStreak } from "../utils/stats";
 import { countPendingTasksForUser, getNextTaskForUser } from "../services/taskService";
 
 const router = Router();
+const completeTaskSchema = z.object({
+  taskId: z.string().uuid(),
+});
 
 router.get(
   "/next",
@@ -21,7 +24,7 @@ router.get(
       return res.status(401).json({ message: "Nicht authentifiziert" });
     }
     const [nextTask, pendingCount] = await Promise.all([
-      getNextTaskForUser(user.id),
+      getNextTaskForUser(user.id, { skipAttemptedToday: true }),
       countPendingTasksForUser(user.id),
     ]);
 
@@ -33,9 +36,68 @@ router.get(
   }),
 );
 
-const completeTaskSchema = z.object({
-  taskId: z.string().uuid(),
-});
+router.post(
+  "/:taskId/defer",
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const paramsParsed = completeTaskSchema.safeParse(req.params);
+
+    if (!paramsParsed.success) {
+      return res.status(400).json({ message: "Ungültige Task-ID", issues: paramsParsed.error.issues });
+    }
+
+    const { taskId } = paramsParsed.data;
+    const user = req.currentUser;
+    if (!user) {
+      return res.status(401).json({ message: "Nicht authentifiziert" });
+    }
+
+    const taskRepository = AppDataSource.getRepository(Task);
+    const progressRepository = AppDataSource.getRepository(TaskProgress);
+
+    const task = await taskRepository.findOne({
+      where: { id: taskId },
+      relations: {
+        group: { item: { room: { user: true } } },
+      },
+    });
+
+    if (!task || task.group.item.room.user.id !== user.id) {
+      return res.status(404).json({ message: "Aufgabe nicht gefunden" });
+    }
+
+    const now = new Date();
+    let progress = await progressRepository.findOne({
+      where: { user: { id: user.id }, task: { id: task.id } },
+    });
+
+    if (!progress) {
+      progress = progressRepository.create({
+        user,
+        task,
+        completed: false,
+        lastAttemptedAt: now,
+      });
+    } else {
+      progress.completed = false;
+      progress.lastAttemptedAt = now;
+    }
+
+    await progressRepository.save(progress);
+
+    const [nextTask, pendingCount] = await Promise.all([
+      getNextTaskForUser(user.id, { skipAttemptedToday: true }),
+      countPendingTasksForUser(user.id),
+    ]);
+
+    return res.json({
+      message: "Aufgabe für heute zurückgestellt",
+      deferredTaskId: task.id,
+      nextTask,
+      pendingCount,
+    });
+  }),
+);
 
 router.post(
   "/:taskId/complete",
@@ -137,7 +199,7 @@ router.post(
     });
 
     const [nextTask, pendingCount] = await Promise.all([
-      getNextTaskForUser(user.id),
+      getNextTaskForUser(user.id, { skipAttemptedToday: true }),
       countPendingTasksForUser(user.id),
     ]);
 
