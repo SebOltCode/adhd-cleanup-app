@@ -1,27 +1,31 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-} from "typeorm";
-import { User } from "./User";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Item } from "./Item";
+import { User } from "./User";
+
+export type RoomConfiguration = {
+  windows?: number;
+  sinks?: number;
+  devices?: number;
+  notes?: string;
+};
 
 @Entity()
 export class Room {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column()
-  name: string;
+  name!: string;
 
-  @Column("jsonb", { nullable: true })
-  configuration: { windows: number; sinks: number; devices: number };
+  @Column({ nullable: true })
+  emoji?: string;
+
+  @Column("simple-json", { nullable: true })
+  configuration?: RoomConfiguration;
 
   @ManyToOne(() => User, (user) => user.rooms, { onDelete: "CASCADE" })
-  user: User;
+  user!: User;
 
-  @OneToMany(() => Item, (item) => item.room)
-  items: Item[];
+  @OneToMany(() => Item, (item) => item.room, { cascade: true })
+  items!: Item[];
 }

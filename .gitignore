@@ -1,0 +1,36 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.DS_Store
+.expo
+.expo-shared
+*.sqlite
+coverage
+backend/dist
+mobile/.expo
+mobile/android
+mobile/ios
+mobile/web-build
+.caches
+# Build-/Release-Artefakte (binär)
+*.apk
+*.aab
+*.ipa
+*.keystore
+*.jks
+*.p12
+*.zip
+*.tar
+*.gz
+*.db
+*.sqlite3
+
+# Bilder/Binary-Assets (PR-Upload-Probleme vermeiden)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg

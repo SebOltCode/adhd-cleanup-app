@@ -1,30 +1,40 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
-import { User } from "./User";
 import { Task } from "./Task";
+import { User } from "./User";
 
 @Entity()
 export class TaskProgress {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @ManyToOne(() => User, (user) => user.progress, { onDelete: "CASCADE" })
-  user: User;
+  user!: User;
 
   @ManyToOne(() => Task, (task) => task.progress, { onDelete: "CASCADE" })
-  task: Task;
+  task!: Task;
 
-  @Column("boolean", { default: false })
-  completed: boolean;
+  @Column({ default: false })
+  completed!: boolean;
 
-  @Column("timestamp", { nullable: true })
-  lastAttemptedAt: Date;
+  @Column({ nullable: true })
+  completedAt?: Date;
+
+  @Column({ nullable: true })
+  lastAttemptedAt?: Date;
+
+  @Column({ type: "int", default: 0 })
+  rewardCollected!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }
