@@ -1,9 +1,9 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
+  Entity,
   ManyToOne,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from "typeorm";
 import { TaskGroup } from "./TaskGroup";
 import { TaskProgress } from "./TaskProgress";
@@ -11,20 +11,23 @@ import { TaskProgress } from "./TaskProgress";
 @Entity()
 export class Task {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column()
-  description: string;
+  description!: string;
 
-  @Column("int")
-  expectedDurationMinutes: number;
+  @Column({ type: "int", default: 5 })
+  expectedDurationMinutes!: number;
 
-  @Column("int")
-  sequence: number;
+  @Column({ type: "int", default: 1 })
+  sequence!: number;
+
+  @Column({ type: "int", default: 10 })
+  rewardPoints!: number;
 
   @ManyToOne(() => TaskGroup, (group) => group.tasks, { onDelete: "CASCADE" })
-  group: TaskGroup;
+  group!: TaskGroup;
 
   @OneToMany(() => TaskProgress, (progress) => progress.task)
-  progress: TaskProgress[];
+  progress!: TaskProgress[];
 }

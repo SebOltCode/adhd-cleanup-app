@@ -1,27 +1,24 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-} from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Item } from "./Item";
 import { Task } from "./Task";
 
 @Entity()
 export class TaskGroup {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column()
-  title: string;
+  title!: string;
 
-  @Column("int")
-  sequence: number;
+  @Column({ type: "int", default: 1 })
+  sequence!: number;
+
+  @Column({ nullable: true })
+  description?: string;
 
   @ManyToOne(() => Item, (item) => item.taskGroups, { onDelete: "CASCADE" })
-  item: Item;
+  item!: Item;
 
-  @OneToMany(() => Task, (task) => task.group)
-  tasks: Task[];
+  @OneToMany(() => Task, (task) => task.group, { cascade: true })
+  tasks!: Task[];
 }

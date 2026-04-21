@@ -1,20 +1,20 @@
-import "reflect-metadata";
-import { DataSource } from "typeorm";
 import app from "./app";
-import * as ormconfig from "../ormconfig";
+import { AppDataSource } from "./data-source";
 
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT ?? 4000);
 
-const dataSource = new DataSource(ormconfig as any);
+async function bootstrap() {
+  try {
+    await AppDataSource.initialize();
+    console.log("📦 Datenbank verbunden");
 
-dataSource
-  .initialize()
-  .then(() => {
-    console.log("DB verbunden");
     app.listen(PORT, () => {
-      console.log(`Server läuft auf http://localhost:${PORT}`);
+      console.log(`🚀 Server läuft auf http://localhost:${PORT}`);
     });
-  })
-  .catch((err) => {
-    console.error("DB-Verbindung fehlgeschlagen:", err);
-  });
+  } catch (error) {
+    console.error("DB-Verbindung fehlgeschlagen", error);
+    process.exit(1);
+  }
+}
+
+void bootstrap();

@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: adhd_cleanup_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: adhd_cleanup
+      POSTGRES_USER: adhd_admin
+      POSTGRES_PASSWORD: adhd_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  db_data:
