@@ -46,6 +46,13 @@ export type CompleteTaskResponse = {
   pendingCount: number;
 };
 
+export type DeferTaskResponse = {
+  message: string;
+  deferredTaskId: string;
+  nextTask: TaskDto | null;
+  pendingCount: number;
+};
+
 export type WeekOverviewEntry = {
   day: string;
   count: number;

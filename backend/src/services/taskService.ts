@@ -1,10 +1,17 @@
 import { AppDataSource } from "../data-source";
 import { Task } from "../models/Task";
+import { startOfDay } from "../utils/date";
 
-export const getNextTaskForUser = async (userId: string) => {
+type NextTaskOptions = {
+  skipAttemptedToday?: boolean;
+};
+
+export const getNextTaskForUser = async (userId: string, options: NextTaskOptions = {}) => {
   const taskRepository = AppDataSource.getRepository(Task);
+  const skipAttemptedToday = options.skipAttemptedToday ?? false;
+  const todayStart = startOfDay(new Date());
 
-  const task = await taskRepository
+  const query = taskRepository
     .createQueryBuilder("task")
     .leftJoinAndSelect("task.group", "group")
     .leftJoinAndSelect("group.item", "item")
@@ -15,7 +22,16 @@ export const getNextTaskForUser = async (userId: string) => {
     .andWhere("COALESCE(progress.completed, false) = false")
     .orderBy("group.sequence", "ASC")
     .addOrderBy("task.sequence", "ASC")
-    .getOne();
+    .addOrderBy("COALESCE(progress.lastAttemptedAt, :epochDate)", "ASC")
+    .setParameter("epochDate", new Date(0));
+
+  if (skipAttemptedToday) {
+    query.andWhere("(progress.id IS NULL OR progress.lastAttemptedAt < :todayStart)", {
+      todayStart,
+    });
+  }
+
+  const task = await query.getOne();
 
   return task ?? null;
 };

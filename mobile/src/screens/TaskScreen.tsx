@@ -6,7 +6,7 @@ import { useApiClient } from "../api/useApiClient";
 import { useCelebration } from "../hooks/useCelebration";
 import { TaskCard } from "../components/TaskCard";
 import { CelebrationOverlay } from "../components/CelebrationOverlay";
-import { CompleteTaskResponse, NextTaskResponse } from "../types/api";
+import { CompleteTaskResponse, DeferTaskResponse, NextTaskResponse } from "../types/api";
 import { useAuth } from "../providers/AuthProvider";
 
 export const TaskScreen = () => {
@@ -23,6 +23,21 @@ export const TaskScreen = () => {
     },
     {
       staleTime: 30_000,
+    },
+  );
+
+  const deferMutation = useMutation(
+    async (taskId: string) => {
+      const response = await api.post<DeferTaskResponse>(`/api/tasks/${taskId}/defer`);
+      return response.data;
+    },
+    {
+      onSuccess: (result) => {
+        queryClient.setQueryData<NextTaskResponse>(["next-task"], {
+          task: result.nextTask,
+          pendingCount: result.pendingCount,
+        });
+      },
     },
   );
 
@@ -45,10 +60,17 @@ export const TaskScreen = () => {
   );
 
   const handleComplete = async () => {
-    if (!data?.task || mutation.isPending) {
+    if (!data?.task || mutation.isPending || deferMutation.isPending) {
       return;
     }
     await mutation.mutateAsync(data.task.id);
+  };
+
+  const handleDefer = async () => {
+    if (!data?.task || mutation.isPending || deferMutation.isPending) {
+      return;
+    }
+    await deferMutation.mutateAsync(data.task.id);
   };
 
   return (
@@ -80,10 +102,10 @@ export const TaskScreen = () => {
                 </Text>
                 <TouchableOpacity
                   onPress={handleComplete}
-                  disabled={!data?.task || mutation.isPending}
+                  disabled={!data?.task || mutation.isPending || deferMutation.isPending}
                   className="bg-white py-4 rounded-2xl items-center"
                 >
-                  {mutation.isPending ? (
+                  {mutation.isPending || deferMutation.isPending ? (
                     <ActivityIndicator color="#244b99" />
                   ) : (
                     <Text className="text-[#071333] text-base font-semibold">Aufgabe abhaken ✅</Text>
@@ -91,8 +113,16 @@ export const TaskScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  onPress={handleDefer}
+                  disabled={!data?.task || mutation.isPending || deferMutation.isPending}
+                  className="mt-3 py-3 items-center rounded-2xl border border-white/30"
+                >
+                  <Text className="text-white/90">Heute überspringen ⏭️</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   onPress={() => refetch()}
-                  disabled={isRefetching}
+                  disabled={isRefetching || mutation.isPending || deferMutation.isPending}
                   className="mt-4 py-3 items-center rounded-2xl border border-white/20"
                 >
                   <Text className="text-white">Andere Aufgabe anzeigen</Text>
